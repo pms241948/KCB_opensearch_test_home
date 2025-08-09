@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:2.13.0
+    container_name: opensearch
+    environment:
+      - cluster.name=opensearch-local
+      - node.name=opensearch-1
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Kcb2025opSLabAi9
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD", "curl", "-k", "https://localhost:9200"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+
+  dashboards:
+    image: opensearchproject/opensearch-dashboards:2.13.0
+    container_name: opensearch-dashboards
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    environment:
+      OPENSEARCH_HOSTS: '["https://opensearch:9200"]'
+      OPENSEARCH_SSL_VERIFICATIONMODE: "none"
+      SERVER_HOST: "0.0.0.0"
+      SERVER_PUBLICBASEURL: "http://opensearch.local"
+      OPENSEARCH_USERNAME: "admin"
+      OPENSEARCH_PASSWORD: "Kcb2025opSLabAi9"
+    ports:
+      - "5601:5601"
+    healthcheck:
+      test: ["CMD", "curl", "-s", "http://localhost:5601/login"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+
+  nginx:
+    image: nginx:1.27
+    container_name: opensearch-nginx
+    depends_on:
+      - dashboards
+      - opensearch
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/opensearch.conf:/etc/nginx/conf.d/opensearch.conf:ro
+
