@@ -1,0 +1,21 @@
+# Logstash 기본 설정
+http.host: "0.0.0.0"
+
+# 파이프라인 설정
+pipeline.workers: 2
+pipeline.batch.size: 125
+pipeline.batch.delay: 50
+
+# 로그 레벨
+log.level: info
+
+# 큐 설정
+queue.type: memory
+queue.max_events: 1000
+
+# 모니터링 설정
+monitoring.enabled: true
+monitoring.elasticsearch.hosts: [ "https://opensearch:9200" ]
+monitoring.elasticsearch.username: "admin"
+monitoring.elasticsearch.password: "Kcb2025opSLabAi9"
+monitoring.elasticsearch.ssl.verification_mode: "none"

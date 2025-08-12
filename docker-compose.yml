@@ -105,10 +105,55 @@ services:
     networks:
       - opensearch-net
 
+  mongodb:
+    image: mongo:6.0
+    container_name: test-mongodb
+    environment:
+      MONGO_INITDB_DATABASE: opensearch_test
+    volumes:
+      - mongodb-data:/data/db
+      - ./test-data/mongodb:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - opensearch-net
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: opensearch-logstash
+    depends_on:
+      opensearch:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./logstash/data:/usr/share/logstash/data
+    ports:
+      - "5000:5000"
+      - "8080:8080"
+      - "5044:5044"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9600"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - opensearch-net
+
 volumes:
   opensearch-data:
   postgres-data:
   mysql-data:
+  mongodb-data:
 
 networks:
   opensearch-net:
